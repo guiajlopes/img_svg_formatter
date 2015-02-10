@@ -1,2 +1,2 @@
-# img_svg_formatter
+# Img SVG Formatter
 Drupal Module For Formatter SVG
