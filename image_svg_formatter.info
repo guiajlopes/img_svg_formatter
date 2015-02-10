@@ -1,0 +1,6 @@
+name = Views SVG Formatter
+core = 7.x
+package = Views
+
+dependencies[] = amazons3
+dependencies[] = views

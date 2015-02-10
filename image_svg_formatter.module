@@ -1,0 +1,104 @@
+<?php
+/**
+ * @file
+ * Module file for Image SVG formatter.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function image_svg_formatter_field_formatter_info() {
+  $formatters = array(
+    'image_svg_formatter' => array(
+      'label' => t('Image SVG Formatter'),
+      'description' => t('Image SVG Formatter'),
+      'field types' => array('image'),
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function image_svg_formatter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    case 'image_svg_formatter':
+      // Each elements.
+      foreach ($items as $delta => $file) {
+        // Validate svg files.
+        if (!preg_match('%\.(svg)$%i', $file['uri'])) {
+          return FALSE;
+        }
+
+        $uri = $file['uri'];
+        // Get SVG Element.
+        $result = image_svg_formatter_get_content($uri);
+        if ($result) {
+          // Render result.
+          $element[$delta] = array(
+            '#type' => 'markup',
+            '#markup' => $result,
+          );
+        }
+      }
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Get SVG By URI.
+ *
+ * @return string
+ *   SVG element.
+ */
+function image_svg_formatter_get_content($uri) {
+  if ($wrapper = file_stream_wrapper_get_instance_by_uri($uri)) {
+    $file_url = $wrapper->getExternalUrl();
+
+    // Custom for amazon WS.
+    $init = substr($file_url, 0, 2);
+    if ($init == '//') {
+      $file_url = 'http:' . $file_url;
+    }
+  }
+
+  // Exit each.
+  if (!isset($file_url)) {
+    continue;
+  }
+
+  // Get svg value.
+  $file_contents = file_get_contents($file_url);
+
+  // If dont has content return false.
+  if (empty($file_contents)) {
+    return FALSE;
+  }
+
+  // Remove XML.
+  $svg = explode('?xml', $file_contents);
+  if (count($svg) > 1) {
+    $svg = explode('?>', $svg[1]);
+    $result = $svg[1];
+  }
+  else {
+    $result = $svg[0];
+  }
+
+  // Remove DOCTYPE if exists.
+  $svg = explode('<!DOCTYPE', $result);
+  if (count($svg) > 1) {
+    $svg = explode('>', $svg[1]);
+    // Remove primeiro elemento.
+    unset($svg[0]);
+    return implode('>', $svg);
+  }
+
+  return $svg[0];
+}
